@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:e_info_mobile/src/feature/landing/gateways/landing_gateway.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -32,6 +34,7 @@ class _LandingScreenState extends State<LandingScreen> {
       debugPrint("❌ Could not launch $url");
     }
   }
+
   @override
   void initState() {
     super.initState();
@@ -41,29 +44,43 @@ class _LandingScreenState extends State<LandingScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-
-          onNavigationRequest: (NavigationRequest request) {
-            print(request.url);
+          onNavigationRequest: (NavigationRequest request) async {
             final uri = Uri.parse(request.url);
-            if (uri.host.contains("einfo.site") &&
-                uri.pathSegments.contains('login-success')) {
+            print("🔗 Navigating to: ${uri.toString()}");
 
+            // Check login success URL
+            final isLoginSuccess = uri.host.contains("einfosite.com") &&
+                uri.pathSegments.length > 1 &&
+                uri.pathSegments.first == "login-success";
+
+            if (isLoginSuccess) {
               final username = uri.pathSegments[1];
               debugPrint("✅ Logged in as: $username");
 
-              // Send FCM token to API
+              try {
+                final fcmToken = await FirebaseMessaging.instance.getToken();
+                print("📱 FCM Token: $fcmToken");
+
+                if (fcmToken != null) {
+                  // Send FCM token to server
+                  SendTokenGateway.endToken(fcmToken, username);
+                }
+              } catch (e) {
+                print("❌ Failed to get FCM token: $e");
+              }
+
               return NavigationDecision.navigate;
             }
-            final isInternalDomain = uri.host.contains("einfosite.com") ;
 
+            // ✅ Allow internal URLs
+            final isInternalDomain = uri.host.contains("einfosite.com");
             if (isInternalDomain) {
-
               return NavigationDecision.navigate;
-            } else {
-              _launchExternalUrl(request.url);
-              return NavigationDecision.prevent;
             }
 
+            // ❌ External: Open externally
+            _launchExternalUrl(request.url);
+            return NavigationDecision.prevent;
           },
 
           onPageStarted: (_) {
