@@ -1,3 +1,4 @@
+import 'package:e_info_mobile/src/common/routes/app_route_args.dart';
 import 'package:flutter/material.dart';
 
 import '../../../common/constants/common_imports.dart';
@@ -14,6 +15,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with AppTheme, SplashScreenService {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,5 +37,5 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void navigateToLandingScreen() {
     Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoute.landingScreen, (x) => false);  }
+        .pushNamedAndRemoveUntil(AppRoute.landingScreen, (x) => false,arguments: LandingScreenArgs(url: "https://www.einfo.site/"));  }
 }

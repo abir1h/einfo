@@ -18,7 +18,7 @@ mixin RouteGenerator {
           case AppRoute.splashScreen:
             return const SplashScreen();
           case AppRoute.landingScreen:
-            return const LandingScreen();
+            return LandingScreen(arguments: setting.arguments);
 
           default:
             return const SplashScreen();

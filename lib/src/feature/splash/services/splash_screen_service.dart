@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../../common/config/app.dart';
+import '../../../common/routes/app_route.dart';
+import '../../../common/routes/app_route_args.dart';
 
 abstract class _ViewModel {
   void showWarning(String message);
@@ -11,6 +14,25 @@ abstract class _ViewModel {
 mixin SplashScreenService<T extends StatefulWidget> on State<T>
 implements _ViewModel {
   late _ViewModel _view;
+  void checkInitialMessage() async {
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+
+    if (initialMessage != null) {
+      final url = initialMessage.data['web_url'];
+      if (url != null && url.isNotEmpty) {
+        // Delay navigation to after widgets are ready
+        print(url);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          AppRoute.navigatorKey.currentState?.pushNamed(
+            AppRoute.landingScreen,
+            arguments: LandingScreenArgs(url: url),
+          );
+        });
+      }else{
+        _view.navigateToLandingScreen();
+      }
+    }
+  }
 
   ///Service configurations
   @override

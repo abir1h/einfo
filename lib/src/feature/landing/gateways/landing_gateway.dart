@@ -12,7 +12,7 @@ static Future<ActionResult<ServerResponse>> endToken(
     url: "store-fcm-token",
     postData: {
       "firebase_token": token,
-      "user_name": token
+      "user_id": name
     },
   ).then((value) {
     return ActionResult<ServerResponse>.fromServerResponse(
