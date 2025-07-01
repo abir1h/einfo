@@ -18,20 +18,16 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late LandingScreenArgs screenArgs;
   InAppWebViewController? webViewController;
-
   bool isLoading = true;
   double _progress = 0;
   bool hasInternet = false;
   bool hasLoadedOnce = false;
-
   late StreamSubscription<List<ConnectivityResult>> connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    print((widget.arguments as LandingScreenArgs).url);
     _requestPermissions();
     _checkInitialConnectivity();
     _setupConnectivityListener();
@@ -44,18 +40,13 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   void _setupConnectivityListener() {
-    connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      results,
-    ) {
-      final hasNetwork =
-          results.isNotEmpty && results.first != ConnectivityResult.none;
+    connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      final hasNetwork = results.isNotEmpty && results.first != ConnectivityResult.none;
       setState(() => hasInternet = hasNetwork);
 
       if (hasNetwork && !hasLoadedOnce) {
         webViewController?.loadUrl(
-          urlRequest: URLRequest(
-            url: WebUri((widget.arguments as LandingScreenArgs).url),
-          ),
+          urlRequest: URLRequest(url: WebUri(_url)),
         );
       }
     });
@@ -68,9 +59,7 @@ class _LandingScreenState extends State<LandingScreen> {
 
     if (hasNetwork && !hasLoadedOnce) {
       webViewController?.loadUrl(
-        urlRequest: URLRequest(
-          url: WebUri((widget.arguments as LandingScreenArgs).url),
-        ),
+        urlRequest: URLRequest(url: WebUri(_url)),
       );
     }
   }
@@ -83,6 +72,8 @@ class _LandingScreenState extends State<LandingScreen> {
       debugPrint("❌ Could not launch $url");
     }
   }
+
+  String get _url => (widget.arguments as LandingScreenArgs).url;
 
   @override
   void dispose() {
@@ -99,9 +90,7 @@ class _LandingScreenState extends State<LandingScreen> {
           children: [
             if (hasInternet)
               InAppWebView(
-                initialUrlRequest: URLRequest(
-                  url: WebUri((widget.arguments as LandingScreenArgs).url),
-                ),
+                initialUrlRequest: URLRequest(url: WebUri(_url)),
                 initialSettings: InAppWebViewSettings(
                   javaScriptEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
@@ -110,13 +99,8 @@ class _LandingScreenState extends State<LandingScreen> {
                   useShouldOverrideUrlLoading: true,
                   allowFileAccess: true,
                 ),
-
                 onWebViewCreated: (controller) {
                   webViewController = controller;
-
-                  // controller.setOnShowFileChooser((params) async {
-                  //   return null; // Let system open file picker (camera/gallery)
-                  // });
                 },
                 onProgressChanged: (controller, progress) {
                   setState(() {
@@ -125,21 +109,35 @@ class _LandingScreenState extends State<LandingScreen> {
                   });
                 },
                 shouldOverrideUrlLoading: (controller, navAction) async {
-                  final uri = navAction.request.url!;
+                  final uri = navAction.request.url;
                   debugPrint("🔗 Navigating to: ${uri.toString()}");
-                  if (uri != null && uri.scheme == 'tel') {
-                    final tel = uri.toString();
+
+                  if (uri == null) return NavigationActionPolicy.ALLOW;
+
+                  // Handle tel: links
+                  if (uri.scheme == 'tel') {
                     if (await canLaunchUrl(uri)) {
                       await launchUrl(uri);
                     } else {
-                      print('❌ Could not launch $tel');
+                      debugPrint('❌ Could not launch ${uri.toString()}');
                     }
                     return NavigationActionPolicy.CANCEL;
                   }
-                  return NavigationActionPolicy.ALLOW;
-
-                  final isLoginSuccess =
-                      uri.host.contains("einfo.site") &&
+                  if (uri.scheme == 'mailto') {
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      debugPrint('❌ Could not launch ${uri.toString()}');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("No email app found.")),
+                        );
+                      }
+                    }
+                    return NavigationActionPolicy.CANCEL;
+                  }
+                  // Handle login success and send FCM token
+                  final isLoginSuccess = uri.host.contains("einfo.site") &&
                       uri.pathSegments.length > 1 &&
                       uri.pathSegments.first == "login-success";
 
@@ -148,10 +146,9 @@ class _LandingScreenState extends State<LandingScreen> {
                     debugPrint("✅ Logged in as: $username");
 
                     try {
-                      final fcmToken = await FirebaseMessaging.instance
-                          .getToken();
+                      final fcmToken = await FirebaseMessaging.instance.getToken();
                       if (fcmToken != null) {
-                        SendTokenGateway.endToken(fcmToken, username);
+                        await SendTokenGateway.endToken(fcmToken, username);
                       }
                     } catch (e) {
                       debugPrint("❌ Failed to get FCM token: $e");
@@ -160,9 +157,8 @@ class _LandingScreenState extends State<LandingScreen> {
                     return NavigationActionPolicy.ALLOW;
                   }
 
-                  final isInternal =
-                      uri.host.contains("einfosite.com") ||
-                      uri.host.contains("einfo.site");
+                  // Launch external links outside WebView
+                  final isInternal = uri.host.contains("einfosite.com") || uri.host.contains("einfo.site");
                   if (!isInternal) {
                     _launchExternalUrl(uri.toString());
                     return NavigationActionPolicy.CANCEL;
@@ -205,9 +201,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       value: _progress,
                       minHeight: 3,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.blueAccent,
-                      ),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
                     ),
                   ),
                 ),

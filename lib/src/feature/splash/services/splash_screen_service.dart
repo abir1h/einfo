@@ -52,7 +52,7 @@ implements _ViewModel {
   ///Fetch users from local database
   void _fetchUserSession() async {
     ///Delayed for 2 seconds
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
     _view.navigateToLandingScreen();
 
     ///Navigate to logical page

@@ -29,7 +29,7 @@ class Application extends StatelessWidget with AppTheme {
         splitScreenMode: true,
         builder: (context, child) {
           return MaterialApp(
-            title: 'BB Tutor',
+            title: 'eInfo',
             debugShowCheckedModeBanner: false,
             useInheritedMediaQuery: true,
             theme: ThemeData(

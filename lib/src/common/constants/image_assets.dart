@@ -36,6 +36,7 @@ class ImageAssets {
   static String get mock => 'mock'.svg;
   static String get records => 'records'.svg;
   static String get studyHours => 'study_hours'.svg;
+  static String get logoApp => 'logoIc'.png;
 }
 
 extension on String {
