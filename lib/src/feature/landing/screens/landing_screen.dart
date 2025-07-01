@@ -31,6 +31,7 @@ class _LandingScreenState extends State<LandingScreen> {
   @override
   void initState() {
     super.initState();
+    print((widget.arguments as LandingScreenArgs).url);
     _requestPermissions();
     _checkInitialConnectivity();
     _setupConnectivityListener();
@@ -43,13 +44,18 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   void _setupConnectivityListener() {
-    connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      final hasNetwork = results.isNotEmpty && results.first != ConnectivityResult.none;
+    connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      final hasNetwork =
+          results.isNotEmpty && results.first != ConnectivityResult.none;
       setState(() => hasInternet = hasNetwork);
 
       if (hasNetwork && !hasLoadedOnce) {
         webViewController?.loadUrl(
-          urlRequest: URLRequest(url: WebUri((widget.arguments as LandingScreenArgs).url)),
+          urlRequest: URLRequest(
+            url: WebUri((widget.arguments as LandingScreenArgs).url),
+          ),
         );
       }
     });
@@ -62,7 +68,9 @@ class _LandingScreenState extends State<LandingScreen> {
 
     if (hasNetwork && !hasLoadedOnce) {
       webViewController?.loadUrl(
-        urlRequest: URLRequest(url: WebUri((widget.arguments as LandingScreenArgs).url)),
+        urlRequest: URLRequest(
+          url: WebUri((widget.arguments as LandingScreenArgs).url),
+        ),
       );
     }
   }
@@ -99,9 +107,9 @@ class _LandingScreenState extends State<LandingScreen> {
                   mediaPlaybackRequiresUserGesture: false,
                   allowsInlineMediaPlayback: true,
                   useOnDownloadStart: true,
-                  useShouldOverrideUrlLoading: true,allowFileAccess: true
+                  useShouldOverrideUrlLoading: true,
+                  allowFileAccess: true,
                 ),
-
 
                 onWebViewCreated: (controller) {
                   webViewController = controller;
@@ -119,8 +127,19 @@ class _LandingScreenState extends State<LandingScreen> {
                 shouldOverrideUrlLoading: (controller, navAction) async {
                   final uri = navAction.request.url!;
                   debugPrint("🔗 Navigating to: ${uri.toString()}");
+                  if (uri != null && uri.scheme == 'tel') {
+                    final tel = uri.toString();
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    } else {
+                      print('❌ Could not launch $tel');
+                    }
+                    return NavigationActionPolicy.CANCEL;
+                  }
+                  return NavigationActionPolicy.ALLOW;
 
-                  final isLoginSuccess = uri.host.contains("einfo.site") &&
+                  final isLoginSuccess =
+                      uri.host.contains("einfo.site") &&
                       uri.pathSegments.length > 1 &&
                       uri.pathSegments.first == "login-success";
 
@@ -129,7 +148,8 @@ class _LandingScreenState extends State<LandingScreen> {
                     debugPrint("✅ Logged in as: $username");
 
                     try {
-                      final fcmToken = await FirebaseMessaging.instance.getToken();
+                      final fcmToken = await FirebaseMessaging.instance
+                          .getToken();
                       if (fcmToken != null) {
                         SendTokenGateway.endToken(fcmToken, username);
                       }
@@ -140,7 +160,9 @@ class _LandingScreenState extends State<LandingScreen> {
                     return NavigationActionPolicy.ALLOW;
                   }
 
-                  final isInternal = uri.host.contains("einfosite.com") ||uri.host.contains("einfo.site") ;
+                  final isInternal =
+                      uri.host.contains("einfosite.com") ||
+                      uri.host.contains("einfo.site");
                   if (!isInternal) {
                     _launchExternalUrl(uri.toString());
                     return NavigationActionPolicy.CANCEL;
@@ -157,9 +179,15 @@ class _LandingScreenState extends State<LandingScreen> {
                   children: const [
                     Icon(Icons.wifi_off, size: 60, color: Colors.grey),
                     SizedBox(height: 20),
-                    Text("No Internet Connection", style: TextStyle(fontSize: 18, color: Colors.black54)),
+                    Text(
+                      "No Internet Connection",
+                      style: TextStyle(fontSize: 18, color: Colors.black54),
+                    ),
                     SizedBox(height: 10),
-                    Text("Waiting for internet...", style: TextStyle(color: Colors.black38)),
+                    Text(
+                      "Waiting for internet...",
+                      style: TextStyle(color: Colors.black38),
+                    ),
                   ],
                 ),
               ),
@@ -177,7 +205,9 @@ class _LandingScreenState extends State<LandingScreen> {
                       value: _progress,
                       minHeight: 3,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.blueAccent,
+                      ),
                     ),
                   ),
                 ),
