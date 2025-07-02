@@ -35,8 +35,10 @@ void main() async {
   await NotificationService().init();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  await InAppWebViewController.setWebContentsDebuggingEnabled(true); // Optional, useful for debugging
+  if (Platform.isAndroid) {
+    await InAppWebViewController.setWebContentsDebuggingEnabled(true);
 
+  }
   runApp(const Application());
 }
 

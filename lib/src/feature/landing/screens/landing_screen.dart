@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import '../../../common/routes/app_route_args.dart';
 import '../gateways/landing_gateway.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -28,15 +29,8 @@ class _LandingScreenState extends State<LandingScreen> {
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
     _checkInitialConnectivity();
     _setupConnectivityListener();
-  }
-
-  Future<void> _requestPermissions() async {
-    await Permission.camera.request();
-    await Permission.photos.request();
-    await Permission.storage.request();
   }
 
   void _setupConnectivityListener() {
@@ -73,6 +67,62 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
+  Future<bool> _handleWebViewFileUploadPermissions() async {
+    if (Platform.isAndroid) {
+      final camera = await Permission.camera.status;
+      final photos = await Permission.photos.status;
+      final storage = await Permission.storage.status;
+
+      bool needsSettings = camera.isPermanentlyDenied || photos.isPermanentlyDenied || storage.isPermanentlyDenied;
+
+      if (needsSettings) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Permission permanently denied. Enable it from Settings."),
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: () {
+                  openAppSettings();
+                },
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+
+      final results = await [Permission.camera, Permission.photos, Permission.storage].request();
+      return results.values.every((status) => status.isGranted);
+    }
+
+    if (Platform.isIOS) {
+      final photos = await Permission.photos.status;
+
+      if (photos.isPermanentlyDenied) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Photo access denied. Enable from Settings."),
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: () {
+                  openAppSettings();
+                },
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+
+      final result = await Permission.photos.request();
+      return result.isGranted;
+    }
+
+    return true;
+  }
+
   String get _url => (widget.arguments as LandingScreenArgs).url;
 
   @override
@@ -102,6 +152,13 @@ class _LandingScreenState extends State<LandingScreen> {
                 onWebViewCreated: (controller) {
                   webViewController = controller;
                 },
+                onPermissionRequest: (controller, request) async {
+                  final granted = await _handleWebViewFileUploadPermissions();
+                  return PermissionResponse(
+                    resources: request.resources,
+                    action: granted ? PermissionResponseAction.GRANT : PermissionResponseAction.DENY,
+                  );
+                },
                 onProgressChanged: (controller, progress) {
                   setState(() {
                     _progress = progress / 100;
@@ -114,7 +171,6 @@ class _LandingScreenState extends State<LandingScreen> {
 
                   if (uri == null) return NavigationActionPolicy.ALLOW;
 
-                  // Handle tel: links
                   if (uri.scheme == 'tel') {
                     if (await canLaunchUrl(uri)) {
                       await launchUrl(uri);
@@ -123,6 +179,7 @@ class _LandingScreenState extends State<LandingScreen> {
                     }
                     return NavigationActionPolicy.CANCEL;
                   }
+
                   if (uri.scheme == 'mailto') {
                     if (await canLaunchUrl(uri)) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -136,7 +193,7 @@ class _LandingScreenState extends State<LandingScreen> {
                     }
                     return NavigationActionPolicy.CANCEL;
                   }
-                  // Handle login success and send FCM token
+
                   final isLoginSuccess = uri.host.contains("einfo.site") &&
                       uri.pathSegments.length > 1 &&
                       uri.pathSegments.first == "login-success";
@@ -157,7 +214,6 @@ class _LandingScreenState extends State<LandingScreen> {
                     return NavigationActionPolicy.ALLOW;
                   }
 
-                  // Launch external links outside WebView
                   final isInternal = uri.host.contains("einfosite.com") || uri.host.contains("einfo.site");
                   if (!isInternal) {
                     _launchExternalUrl(uri.toString());
@@ -175,15 +231,9 @@ class _LandingScreenState extends State<LandingScreen> {
                   children: const [
                     Icon(Icons.wifi_off, size: 60, color: Colors.grey),
                     SizedBox(height: 20),
-                    Text(
-                      "No Internet Connection",
-                      style: TextStyle(fontSize: 18, color: Colors.black54),
-                    ),
+                    Text("No Internet Connection", style: TextStyle(fontSize: 18, color: Colors.black54)),
                     SizedBox(height: 10),
-                    Text(
-                      "Waiting for internet...",
-                      style: TextStyle(color: Colors.black38),
-                    ),
+                    Text("Waiting for internet...", style: TextStyle(color: Colors.black38)),
                   ],
                 ),
               ),
