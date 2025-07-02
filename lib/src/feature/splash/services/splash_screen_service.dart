@@ -52,8 +52,25 @@ implements _ViewModel {
   ///Fetch users from local database
   void _fetchUserSession() async {
     ///Delayed for 2 seconds
-    await Future.delayed(const Duration(seconds: 1));
-    _view.navigateToLandingScreen();
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+
+    if (initialMessage != null) {
+      final url = initialMessage.data['web_url'];
+      if (url != null && url.isNotEmpty) {
+        // Delay navigation to after widgets are ready
+        print(url);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          AppRoute.navigatorKey.currentState?.pushNamed(
+            AppRoute.landingScreen,
+            arguments: LandingScreenArgs(url: url),
+          );
+        });
+      }else{
+        _view.navigateToLandingScreen();
+      }
+    }else{
+      _view.navigateToLandingScreen();
+    }
 
     ///Navigate to logical page
     // App.getCurrentSession().then((session) async {
