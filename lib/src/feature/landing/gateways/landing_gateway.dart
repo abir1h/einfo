@@ -23,6 +23,23 @@ static Future<ActionResult<ServerResponse>> endToken(
     return ActionResult<ServerResponse>.error();
   });
 }
+static Future<ActionResult<ServerResponse>> removeToken(
+    String token, String name) async {
+  return Server.instance.postRequest(
+    url: "store-fcm-token",
+    postData: {
+      "firebase_token": null,
+      "user_id": name
+    },
+  ).then((value) {
+    return ActionResult<ServerResponse>.fromServerResponse(
+      response: value,
+      generateData: (x) => value,
+    );
+  }).catchError((e) {
+    return ActionResult<ServerResponse>.error();
+  });
+}
 
 // static Future<ActionResult<ServerResponse>> forgetPassword(
 //     String email, String userType) async {
