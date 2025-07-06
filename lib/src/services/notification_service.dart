@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:e_info_mobile/src/common/routes/app_route.dart';
 import 'package:e_info_mobile/src/common/routes/app_route_args.dart';
@@ -16,24 +17,50 @@ class NotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // Local notifications setup
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+    // Android initialization
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+
+    // iOS (Darwin) initialization
+    final iosSettings = DarwinInitializationSettings(
+      requestSoundPermission: true,
+      requestBadgePermission: true,
+      requestAlertPermission: true,
+
+      // onDidReceiveNotificationResponse: (NotificationResponse response) {
+      //   // This is triggered when user taps the notification on iOS
+      //   final payload = response.payload;
+      //   if (payload != null && payload.isNotEmpty) {
+      //     // Handle navigation or logic here, e.g.:
+      //     print('Notification payload: $payload');
+      //     // For example, navigate using your navigatorKey:
+      //     AppRoute.navigatorKey.currentState?.pushNamed(
+      //       AppRoute.landingScreen,
+      //       arguments: LandingScreenArgs(url: payload),
+      //     );
+      //   }
+      // },
+    );
+
+    final initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
     await _flutterLocalNotificationsPlugin.initialize(initSettings);
 
-    // Firebase messaging permissions
+    // Request permissions (iOS)
     await _messaging.requestPermission();
 
-    // Firebase foreground & background handlers
+    // Setup FCM handlers
     initializeFCM();
   }
 
   void initializeFCM() {
-    // Foreground message
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📩 Foreground Message: ${message.notification?.title}');
       print('📲 Message Body: ${message.notification?.body}');
@@ -41,7 +68,6 @@ class NotificationService {
 
       showNotification(message);
 
-      // Optional: Navigate directly in foreground
       final url = message.data['web_url'];
       if (url != null && url.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,7 +79,6 @@ class NotificationService {
       }
     });
 
-    // When tapped while app is in background or terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('📲 App opened from notification: ${message.notification?.title}');
       final url = message.data['web_url'];
@@ -66,11 +91,16 @@ class NotificationService {
         });
       }
     });
-
-    // Optional: print device token
-    _messaging.getToken().then((token) {
-      print('📱 FCM Token: $token');
-    });
+    if (Platform.isAndroid) {
+      _messaging.getToken().then((token) {
+        print('📱 FCM Token: $token');
+      });
+    }
+    if (Platform.isIOS) {
+      FirebaseMessaging.instance.getAPNSToken().then((apnsToken) {
+        print('🍎 APNs Token: $apnsToken');
+      });
+    }
   }
 
   Future<void> showNotification(RemoteMessage message) async {
