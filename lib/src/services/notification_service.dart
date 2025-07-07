@@ -17,46 +17,44 @@ class NotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // Android initialization
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
+    // Android settings
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS (Darwin) initialization
+    // iOS settings
     final iosSettings = DarwinInitializationSettings(
       requestSoundPermission: true,
       requestBadgePermission: true,
       requestAlertPermission: true,
-
-      // onDidReceiveNotificationResponse: (NotificationResponse response) {
-      //   // This is triggered when user taps the notification on iOS
-      //   final payload = response.payload;
-      //   if (payload != null && payload.isNotEmpty) {
-      //     // Handle navigation or logic here, e.g.:
-      //     print('Notification payload: $payload');
-      //     // For example, navigate using your navigatorKey:
-      //     AppRoute.navigatorKey.currentState?.pushNamed(
-      //       AppRoute.landingScreen,
-      //       arguments: LandingScreenArgs(url: payload),
-      //     );
-      //   }
-      // },
     );
 
+    // Combine initialization settings
     final initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
 
-    await _flutterLocalNotificationsPlugin.initialize(initSettings);
+    // Handle notification tap from background/terminated
+    await _flutterLocalNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        final payload = response.payload;
+        if (payload != null && payload.isNotEmpty) {
+          print("🔔 Notification tapped with payload: $payload");
+          AppRoute.navigatorKey.currentState?.pushNamed(
+            AppRoute.landingScreen,
+            arguments: LandingScreenArgs(url: payload),
+          );
+        }
+      },
+    );
 
-    // Request permissions (iOS)
+    // Request notification permission (iOS)
     await _messaging.requestPermission();
 
-    // Setup FCM handlers
+    // Initialize FCM handlers
     initializeFCM();
   }
 
@@ -68,6 +66,7 @@ class NotificationService {
 
       showNotification(message);
 
+      // Optional immediate foreground navigation
       final url = message.data['web_url'];
       if (url != null && url.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -91,11 +90,13 @@ class NotificationService {
         });
       }
     });
+
     if (Platform.isAndroid) {
       _messaging.getToken().then((token) {
         print('📱 FCM Token: $token');
       });
     }
+
     if (Platform.isIOS) {
       FirebaseMessaging.instance.getAPNSToken().then((apnsToken) {
         print('🍎 APNs Token: $apnsToken');
@@ -105,6 +106,7 @@ class NotificationService {
 
   Future<void> showNotification(RemoteMessage message) async {
     final imageUrl = message.data['user_image'];
+    final payload = message.data['web_url'];
     AndroidNotificationDetails androidDetails;
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -144,11 +146,15 @@ class NotificationService {
 
     final notificationDetails = NotificationDetails(android: androidDetails);
 
+    final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    print("🔔 Showing notification with ID: $notificationId and payload: $payload");
+
     await _flutterLocalNotificationsPlugin.show(
-      message.hashCode,
+      notificationId,
       message.notification?.title ?? 'No Title',
       message.notification?.body ?? 'No Body',
       notificationDetails,
+      payload: payload, // ✅ Needed for tap navigation
     );
   }
 

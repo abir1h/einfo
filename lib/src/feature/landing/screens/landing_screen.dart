@@ -275,16 +275,23 @@ class _LandingScreenState extends State<LandingScreen> with WidgetsBindingObserv
                       debugPrint("🔗 Navigating to: ${uri.toString()}");
 
                       if (uri.scheme == 'tel' || uri.scheme == 'mailto') {
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } else {
-                          debugPrint('❌ Could not launch ${uri.toString()}');
-                          if (context.mounted && uri.scheme == 'mailto') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("No email app found.")),
-                            );
+                        try {
+                          // iOS requires tel: to be properly formatted with + and digits
+                          final launchUri = Uri.parse(uri.toString());
+                          if (await canLaunchUrl(launchUri)) {
+                            await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+                          } else {
+                            debugPrint('❌ Could not launch ${launchUri.toString()}');
+                            if (context.mounted && uri.scheme == 'mailto') {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("No email app found.")),
+                              );
+                            }
                           }
+                        } catch (e) {
+                          debugPrint('❌ Error launching URL: $e');
                         }
+
                         return NavigationActionPolicy.CANCEL;
                       }
 
