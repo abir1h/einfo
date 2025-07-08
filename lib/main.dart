@@ -1,3 +1,4 @@
+import 'package:e_info_mobile/src/services/applink_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,12 @@ void main() async {
     await InAppWebViewController.setWebContentsDebuggingEnabled(true);
 
   }
+
+  AppLinkService().init(onLinkReceived: (uri) {
+    print('Received deep link: $uri');
+    // Handle navigation or logic here
+  });
+
   runApp(const Application());
 }
 
