@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "438009665395",
+    "project_id": "einfo-e95ba",
+    "storage_bucket": "einfo-e95ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:438009665395:android:be58e8a62b570eca58d706",
+        "android_client_info": {
+          "package_name": "com.einfo.site"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoD2nhQsz1QOPqMzVAn-bRpvEqu5SneVk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
