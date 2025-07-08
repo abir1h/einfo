@@ -8,10 +8,8 @@ import 'dart:io';
 import 'src/common/app.dart';
 import 'src/services/notification_service.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
 
   await Firebase.initializeApp(
     options: Platform.isAndroid
@@ -38,13 +36,10 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   if (Platform.isAndroid) {
     await InAppWebViewController.setWebContentsDebuggingEnabled(true);
-
   }
 
-  AppLinkService().init(onLinkReceived: (uri) {
-    print('Received deep link: $uri');
-    // Handle navigation or logic here
-  });
+  final appLinkService = AppLinkService();
+  await appLinkService.init();
 
   runApp(const Application());
 }

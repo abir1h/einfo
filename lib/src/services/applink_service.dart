@@ -1,5 +1,12 @@
 import 'dart:async';
+
 import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
+
+import '../common/routes/app_route.dart';
+import '../common/routes/app_route_args.dart';
+
+Uri? globalDeepLinkUri;
 
 class AppLinkService {
   static final AppLinkService _instance = AppLinkService._internal();
@@ -9,30 +16,38 @@ class AppLinkService {
 
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _subscription;
+  bool _isInitialized = false;
 
-  /// Initializes the app link listeners
-  Future<void> init({
-    required void Function(Uri uri) onLinkReceived,
-  }) async {
+  Future<void> init() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+
     try {
-      // ✅ Use getInitialLink instead of getInitialAppLink
       final Uri? initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
-        onLinkReceived(initialUri);
+        _handleUri(initialUri);
       }
 
-      // Listen for app links while app is running
       _subscription = _appLinks.uriLinkStream.listen(
-            (Uri uri) {
-          onLinkReceived(uri);
+        (Uri uri) {
+          _handleUri(uri);
         },
         onError: (err) {
-          print('AppLinks stream error: $err');
+          debugPrint('AppLinks stream error: $err');
         },
       );
     } catch (e) {
-      print('AppLinks initialization error: $e');
+      debugPrint('AppLinks initialization error: $e');
     }
+  }
+
+  void _handleUri(Uri uri) {
+    globalDeepLinkUri = uri; // ✅ Store URI globally
+
+    AppRoute.navigatorKey.currentState?.pushNamed(
+      AppRoute.landingScreen,
+      arguments: LandingScreenArgs(url: uri.toString()),
+    );
   }
 
   void dispose() {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../common/config/app.dart';
 import '../../../common/routes/app_route.dart';
 import '../../../common/routes/app_route_args.dart';
+import '../../../services/applink_service.dart';
 
 abstract class _ViewModel {
   void showWarning(String message);
@@ -12,7 +13,7 @@ abstract class _ViewModel {
 }
 
 mixin SplashScreenService<T extends StatefulWidget> on State<T>
-implements _ViewModel {
+    implements _ViewModel {
   late _ViewModel _view;
   void checkInitialMessage() async {
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
@@ -28,7 +29,7 @@ implements _ViewModel {
             arguments: LandingScreenArgs(url: url),
           );
         });
-      }else{
+      } else {
         _view.navigateToLandingScreen();
       }
     }
@@ -50,43 +51,50 @@ implements _ViewModel {
   }
 
   ///Fetch users from local database
+  // void _fetchUserSession() async {
+  //   ///Delayed for 2 seconds
+  //   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  //
+  //   if (initialMessage != null) {
+  //     final url = initialMessage.data['web_url'];
+  //     if (url != null && url.isNotEmpty) {
+  //       WidgetsBinding.instance.addPostFrameCallback((_) {
+  //         AppRoute.navigatorKey.currentState?.pushNamed(
+  //           AppRoute.landingScreen,
+  //           arguments: LandingScreenArgs(url: url),
+  //         );
+  //       });
+  //     } else {
+  //       _view.navigateToLandingScreen();
+  //     }
+  //   } else {
+  //     _view.navigateToLandingScreen();
+  //   }
+  // }
   void _fetchUserSession() async {
-    ///Delayed for 2 seconds
+    // ✅ 1. Check Firebase notification for initial message
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    String? notificationUrl;
 
     if (initialMessage != null) {
-      final url = initialMessage.data['web_url'];
-      if (url != null && url.isNotEmpty) {
-        // Delay navigation to after widgets are ready
-        print(url);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          AppRoute.navigatorKey.currentState?.pushNamed(
-            AppRoute.landingScreen,
-            arguments: LandingScreenArgs(url: url),
-          );
-        });
-      }else{
-        _view.navigateToLandingScreen();
-      }
-    }else{
-      _view.navigateToLandingScreen();
+      notificationUrl = initialMessage.data['web_url'];
     }
 
-    ///Navigate to logical page
-    // App.getCurrentSession().then((session) async {
-    //   if (session.token.isEmpty) {
-    //     ///Navigate to login screens
-    //     App.getOnboardUser().then((value) {
-    //       if (!value) {
-    //         _view.navigateToOnBoardingScreen();
-    //       } else {
-    //         _view.navigateToLandingScreen();
-    //       }
-    //     });
-    //   } else {
-    //     ///Navigate to landing page
-    //     _view.navigateToLandingScreen();
-    //   }
-    // });
+    // ✅ 2. Determine final URL: notification > globalDeepLinkUri
+    final Uri? finalUri = notificationUrl?.isNotEmpty == true
+        ? Uri.tryParse(notificationUrl!)
+        : globalDeepLinkUri;
+
+    if (finalUri != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppRoute.navigatorKey.currentState?.pushNamed(
+          AppRoute.landingScreen,
+          arguments: LandingScreenArgs(url: finalUri.toString()),
+        );
+      });
+    } else {
+      // ✅ No notification or deep link → navigate normally
+      _view.navigateToLandingScreen();
+    }
   }
 }
