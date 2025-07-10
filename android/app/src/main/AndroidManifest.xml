@@ -22,7 +22,9 @@
         android:enableOnBackInvokedCallback="true">
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default_channel" />
-
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/icon_notification" />
         <!-- Required for file upload via WebView -->
         <provider
             android:name="androidx.core.content.FileProvider"
