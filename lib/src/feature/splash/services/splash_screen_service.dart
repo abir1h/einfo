@@ -6,6 +6,7 @@ import '../../../common/config/app.dart';
 import '../../../common/routes/app_route.dart';
 import '../../../common/routes/app_route_args.dart';
 import '../../../services/applink_service.dart';
+import '../../landing/gateways/landing_gateway.dart';
 
 abstract class _ViewModel {
   void showWarning(String message);
@@ -73,28 +74,44 @@ mixin SplashScreenService<T extends StatefulWidget> on State<T>
   // }
   void _fetchUserSession() async {
     // ✅ 1. Check Firebase notification for initial message
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    String? notificationUrl;
+    try {
+      // 1. Check if app was launched from terminated state via a notification tap
+      final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
 
-    if (initialMessage != null) {
-      notificationUrl = initialMessage.data['web_url'];
-    }
+      String? notificationUrl;
 
-    // ✅ 2. Determine final URL: notification > globalDeepLinkUri
-    final Uri? finalUri = notificationUrl?.isNotEmpty == true
-        ? Uri.tryParse(notificationUrl!)
-        : globalDeepLinkUri;
+      if (initialMessage != null && initialMessage.data.isNotEmpty) {
+        notificationUrl = initialMessage.data['web_url'];
+        print('🚀 App launched from notification with URL: $notificationUrl');
+      }
 
-    if (finalUri != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        AppRoute.navigatorKey.currentState?.pushNamed(
-          AppRoute.landingScreen,
-          arguments: LandingScreenArgs(url: finalUri.toString()),
-        );
-      });
-    } else {
-      // ✅ No notification or deep link → navigate normally
-      _view.navigateToLandingScreen();
+      final userId = initialMessage!.data['user_id']?.toString() ?? '';
+      final sourceId = initialMessage.data['source_id']?.toString() ?? '';
+      final type = initialMessage.data['type']?.toString() ?? '';
+
+      print("🔔 Notification tapped with: userId=$userId, sourceId=$sourceId, type=$type");
+
+      SendTokenGateway.markNotificationAsSeen(userId: userId, sourceId: sourceId, type: type);
+      // 2. Choose URL from notification first, otherwise globalDeepLinkUri (could be null)
+      final Uri? finalUri = (notificationUrl?.isNotEmpty == true)
+          ? Uri.tryParse(notificationUrl!)
+          : globalDeepLinkUri;
+
+      // 3. Navigate accordingly on next frame
+      if (finalUri != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          AppRoute.navigatorKey.currentState?.pushNamed(
+            AppRoute.landingScreen,
+            arguments: LandingScreenArgs(url: finalUri.toString()),
+          );
+        });
+      } else {
+        // No notification or deep link → normal navigation
+        _view.navigateToLandingScreen();
+      }
+    } catch (e, stack) {
+      print('❌ Error in _fetchUserSession: $e\n$stack');
+      _view.navigateToLandingScreen(); // fallback navigation
     }
   }
 }
