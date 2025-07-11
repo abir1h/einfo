@@ -77,8 +77,36 @@ mixin SplashScreenService<T extends StatefulWidget> on State<T>
     try {
       // 1. Check if app was launched from terminated state via a notification tap
       final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-
       String? notificationUrl;
+
+      if (initialMessage != null && initialMessage.data.isNotEmpty) {
+        notificationUrl = initialMessage.data['web_url'];
+        final userId = initialMessage.data['user_id']?.toString() ?? '';
+        final sourceId = initialMessage.data['source_id']?.toString() ?? '';
+        final type = initialMessage.data['type']?.toString() ?? '';
+
+        SendTokenGateway.markNotificationAsSeen(userId: userId, sourceId: sourceId, type: type);
+      }
+
+// ✅ Wait a moment in case globalDeepLinkUri isn't initialized yet
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final Uri? finalUri = (notificationUrl?.isNotEmpty == true)
+          ? Uri.tryParse(notificationUrl!)
+          : globalDeepLinkUri;
+
+      if (finalUri != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          AppRoute.navigatorKey.currentState?.pushNamed(
+            AppRoute.landingScreen,
+            arguments: LandingScreenArgs(url: finalUri.toString()),
+          );
+        });
+      } else {
+        _view.navigateToLandingScreen();
+      }
+
+     /* String? notificationUrl;
 
       if (initialMessage != null && initialMessage.data.isNotEmpty) {
         notificationUrl = initialMessage.data['web_url'];
@@ -108,7 +136,7 @@ mixin SplashScreenService<T extends StatefulWidget> on State<T>
       } else {
         // No notification or deep link → normal navigation
         _view.navigateToLandingScreen();
-      }
+      }*/
     } catch (e, stack) {
       print('❌ Error in _fetchUserSession: $e\n$stack');
       _view.navigateToLandingScreen(); // fallback navigation
