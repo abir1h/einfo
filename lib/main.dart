@@ -13,27 +13,43 @@ void main() async {
 
   await Firebase.initializeApp(
     options: Platform.isAndroid
-        ? FirebaseOptions(
-            apiKey: "AIzaSyBoD2nhQsz1QOPqMzVAn-bRpvEqu5SneVk",
-            appId: "1:438009665395:android:be58e8a62b570eca58d706",
-            messagingSenderId: "438009665395",
-            projectId: "einfo-e95ba",
-            storageBucket: "einfo-e95ba.firebasestorage.app",
-          )
-        : FirebaseOptions(
-            apiKey: "AIzaSyBbq4mIpA94Lj5z66m0ZXSFwMHSxm_QJ8U",
-            appId: "1:438009665395:ios:42ae9ad25e613bb358d706",
-            messagingSenderId: "438009665395",
-            projectId: "einfo-e95ba",
-            storageBucket: "einfo-e95ba.firebasestorage.app",
-            iosBundleId: 'com.einfo.site',
-          ),
+        ? const FirebaseOptions(
+      apiKey: "AIzaSyBoD2nhQsz1QOPqMzVAn-bRpvEqu5SneVk",
+      appId: "1:438009665395:android:be58e8a62b570eca58d706",
+      messagingSenderId: "438009665395",
+      projectId: "einfo-e95ba",
+      storageBucket: "einfo-e95ba.firebasestorage.app",
+    )
+        : const FirebaseOptions(
+      apiKey: "AIzaSyBbq4mIpA94Lj5z66m0ZXSFwMHSxm_QJ8U",
+      appId: "1:438009665395:ios:42ae9ad25e613bb358d706",
+      messagingSenderId: "438009665395",
+      projectId: "einfo-e95ba",
+      storageBucket: "einfo-e95ba.firebasestorage.app",
+      iosBundleId: 'com.einfo.site',
+    ),
   );
 
-  // Initialize everything from the service
+  // ✅ Request iOS notification permissions
+  if (Platform.isIOS) {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+  }
+
+  // ✅ Initialize your notification service
   await NotificationService().init();
 
+  // ✅ Background message handler (Android + iOS)
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // ✅ Debugging for Android WebView
   if (Platform.isAndroid) {
     await InAppWebViewController.setWebContentsDebuggingEnabled(true);
   }
@@ -47,5 +63,4 @@ void main() async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('🔙 Handling a background message: ${message.messageId}');
-  // Optional: save to local db, schedule notification, etc.
 }
