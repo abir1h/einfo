@@ -335,9 +335,11 @@ class _LandingScreenState extends State<LandingScreen>
                                   debugPrint("✅ Logged in as: $username");
 
                                   try {
-                                    final fcmToken = await FirebaseMessaging
-                                        .instance
-                                        .getToken();
+                                    final fcmToken = Platform.isAndroid
+                                        ? await FirebaseMessaging.instance
+                                              .getToken()
+                                        : await FirebaseMessaging.instance
+                                              .getToken();
                                     if (fcmToken != null) {
                                       await SendTokenGateway.endToken(
                                         fcmToken,
