@@ -74,7 +74,7 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📩 Foreground Message: ${message.notification?.title}');
       print('📲 Message Body: ${message.notification?.body}');
-      print('📦 Data: ${message.data}');
+      print('📦 Data: ${message}');
 
       showNotification(message);
 
