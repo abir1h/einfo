@@ -40,9 +40,9 @@
 	<key>FlutterDeepLinkingEnabled</key>
     <false/>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to the camera to upload images.</string>
+	<string>We use the camera so users can take photos or videos to report local problems or share updates on eINFO.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photos for uploading.</string>
+	<string>We need access to your photos so users can take photos or videos to report local problems or share updates on eINFO.</string>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
