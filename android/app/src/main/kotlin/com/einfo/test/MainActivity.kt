@@ -1,4 +1,4 @@
-package com.einfo.site
+package com.einfo.test
 
 import io.flutter.embedding.android.FlutterActivity
 
