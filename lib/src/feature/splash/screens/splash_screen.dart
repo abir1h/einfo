@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void navigateToLandingScreen() {
     Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoute.landingScreen, (x) => false,arguments: LandingScreenArgs(url: "https://www.einfo.site/"));
+        .pushNamedAndRemoveUntil(AppRoute.landingScreen, (x) => false,arguments: LandingScreenArgs(url: "https://test.niomitbd.com/"));
 
   }
 }

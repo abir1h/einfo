@@ -185,6 +185,15 @@ class NotificationService {
       priority: Priority.high,
     );
   }
-
+  Future<void> cancelNotificationByTitle(String title) async {
+    final pendingNotifications = await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+    for (var notification in pendingNotifications) {
+      if (notification.title == title) {
+        await _flutterLocalNotificationsPlugin.cancel(notification.id);
+        print('🧹 Cancelled notification with title: $title (ID: ${notification.id})');
+        break;
+      }
+    }
+  }
 
 }
