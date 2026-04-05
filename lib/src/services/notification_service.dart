@@ -78,15 +78,15 @@ class NotificationService {
 
       showNotification(message);
 
-      final url = message.data['web_url'];
-      if (url != null && url.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          AppRoute.navigatorKey.currentState?.pushNamed(
-            AppRoute.landingScreen,
-            arguments: LandingScreenArgs(url: url),
-          );
-        });
-      }
+      // final url = message.data['web_url'];
+      // if (url != null && url.isNotEmpty) {
+      //   WidgetsBinding.instance.addPostFrameCallback((_) {
+      //     AppRoute.navigatorKey.currentState?.pushNamed(
+      //       AppRoute.landingScreen,
+      //       arguments: LandingScreenArgs(url: url),
+      //     );
+      //   });
+      // }
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
