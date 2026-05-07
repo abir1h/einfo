@@ -321,12 +321,12 @@ class _LandingScreenState extends State<LandingScreen>
                                 }
 
                                 final isLoginSuccess =
-                                    uri.host.contains("niomitbd.com") &&
+                                    uri.host.contains("wihima.com") &&
                                     uri.pathSegments.length > 1 &&
                                     uri.pathSegments.first == "login-success";
 
                                 final isLogOutSuccess =
-                                    uri.host.contains("niomitbd.com") &&
+                                    uri.host.contains("wihima.com") &&
                                     uri.pathSegments.length > 1 &&
                                     uri.pathSegments.first == "logout-success";
 
@@ -375,8 +375,8 @@ class _LandingScreenState extends State<LandingScreen>
                                 }
 
                                 final isInternal =
-                                    uri.host.contains("niomitbd.com") ||
-                                    uri.host.contains("niomitbd.com");
+                                    uri.host.contains("wihima.com") ||
+                                    uri.host.contains("wihima.com");
                                 if (!isInternal) {
                                   _launchExternalUrl(uri.toString());
                                   return NavigationActionPolicy.CANCEL;
