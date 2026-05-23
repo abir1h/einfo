@@ -113,12 +113,16 @@ class NotificationService {
     if (Platform.isAndroid) {
       _messaging.getToken().then((token) {
         print('📱 FCM Token: $token');
+      }).catchError((e) {
+        print('⚠️ FCM Token Error: $e');
       });
     }
 
     if (Platform.isIOS) {
       FirebaseMessaging.instance.getAPNSToken().then((apnsToken) {
         print('🍎 APNs Token: $apnsToken');
+      }).catchError((e) {
+        print('⚠️ APNs Token Error: $e');
       });
     }
   }

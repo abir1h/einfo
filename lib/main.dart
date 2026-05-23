@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'src/common/app.dart';
 import 'src/services/notification_service.dart';
+import 'src/services/facebook_attribution_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,9 @@ void main() async {
 
   // ✅ Initialize your notification service
   await NotificationService().init();
+
+  // ✅ Facebook App Install Attribution (Android + iOS)
+  await FacebookAttributionService.initialize();
 
   // ✅ Background message handler (Android + iOS)
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

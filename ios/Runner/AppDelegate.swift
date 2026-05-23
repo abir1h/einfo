@@ -4,6 +4,7 @@ import FirebaseCore
 import FirebaseMessaging
 import app_links
 
+
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
@@ -18,6 +19,8 @@ import app_links
       // ✅ Register for remote notifications
       application.registerForRemoteNotifications()
 
+
+
       GeneratedPluginRegistrant.register(with: self)
        if let url = AppLinks.shared.getLink(launchOptions: launchOptions) {
             // We have a link, propagate it to your Flutter app or not
@@ -26,6 +29,8 @@ import app_links
           }
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+
+
 
   override func application(_ application: UIApplication,
                             didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
